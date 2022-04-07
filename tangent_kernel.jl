@@ -8,7 +8,7 @@ using JLD2
 
 norm_row(X) = sqrt.(sum(abs2, X, dims=2))
 
-num_sample = 10
+num_sample = 20
 d = 3
 k = 100
 alpha = 0.1
