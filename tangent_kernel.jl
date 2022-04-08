@@ -8,7 +8,7 @@ using JLD2
 
 norm_row(X) = sqrt.(sum(abs2, X, dims=2))
 
-num_sample = 20
+num_sample = 5
 d = 3
 k = 100
 alpha = 0.1
@@ -32,7 +32,7 @@ eigmin_H2_H3 = []
 
 for i in 1:1000
     X = randn(num_sample, d)
-    X ./ norm_row(X)
+    X = X ./ norm_row(X)
 
     A = randn(k, k) / k
     B = randn(k, k) / k
@@ -72,3 +72,5 @@ jldopen("data/kernel_$(num_sample)_$(d)_$(k)_$(alpha).jld2", "w") do file
     write(file, "eigmin_H1_H3", eigmin_H1_H3)
     write(file, "eigmin_H2_H3", eigmin_H2_H3)
 end
+
+close(f)

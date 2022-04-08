@@ -64,3 +64,16 @@ $$
 $$
 \left[ X * Q \right] \left[ X * Q \right]^T = \left[ X X^T \right]\circ \left[ QQ^T \right]
 $$
+
+$$
+\begin{aligned}    
+P_A P_A^T     =& \left[(I + K^{(m)})(I \otimes A^T)\right] \left[(I + K^{(m)})(I \otimes A^T)\right]^\top \\    
+=& (I + K^{(m)})(I \otimes A^T) (I \otimes A^T)^\top (I + K^{(m)})^\top \\    
+=& (I + K^{(m)})(I \otimes A^T) (I \otimes A)(I + K^{(m)}) \\    
+=& (I + K^{(m)}) (I \otimes A^\top A)(I + K^{(m)}) \\
+=& (I \otimes A^\top A) + K^{(m)}(I \otimes A^\top A) \\
+&+ K^{(m)}(A^\top A \otimes I) + (A^\top A \otimes I) \\
+=& (I + K^{(m)})(A^TA \oplus A^TA)
+
+\end{aligned}
+$$
