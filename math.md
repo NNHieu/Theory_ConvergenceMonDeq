@@ -74,6 +74,5 @@ P_A P_A^T     =& \left[(I + K^{(m)})(I \otimes A^T)\right] \left[(I + K^{(m)})(I
 =& (I \otimes A^\top A) + K^{(m)}(I \otimes A^\top A) \\
 &+ K^{(m)}(A^\top A \otimes I) + (A^\top A \otimes I) \\
 =& (I + K^{(m)})(A^TA \oplus A^TA)
-
 \end{aligned}
 $$
