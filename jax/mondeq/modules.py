@@ -120,7 +120,7 @@ def deq_backward(dyn, max_iter, tol, nonlin_mdl, res, g):
         Winv=bwd_dyn_state.Winv.T
     )
     solver_state = solve(bwd_dyn_state, dyn_update, max_iter, tol)
-
+    
     # dg = lin_mdl.W_trans(solver_state.min_step.z)
     # dg = g + dg
 

@@ -1,4 +1,4 @@
-name: /home/cyanos/Workspace/Theory/ConverMonDeq_jax/.venv
+name: convermondeq_jax
 channels:
   - defaults
 dependencies:
@@ -51,7 +51,7 @@ dependencies:
   - wheel=0.37.1=pyhd3eb1b0_0
   - xz=5.2.5=h7b6447c_0
   - zeromq=4.3.4=h2531618_0
-  - zlib=1.2.12=h7f8727e_0
+  # - zlib=1.2.12=h7f8727e_0
   - pip:
     - absl-py==1.0.0
     - equinox==0.4.0
@@ -62,4 +62,4 @@ dependencies:
     - opt-einsum==3.3.0
     - scipy==1.8.0
     - typing-extensions==4.1.1
-prefix: /home/cyanos/Workspace/Theory/ConverMonDeq_jax/.venv
+prefix: .venv
