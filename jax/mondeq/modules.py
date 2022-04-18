@@ -1,3 +1,4 @@
+from audioop import bias
 from functools import partial
 import jax
 from jax import numpy as jnp, random as jrandom
@@ -52,50 +53,26 @@ class Relu(eqx.Module):
     def derivative(self, x):
         return jax.lax.select(x > 0, jax.lax.full_like(x, 1.), jax.lax.full_like(x, 0.))
 
-# class Deq(eqx.Module):
-#     lin_mdl: eqx.Module
-#     nonlin_mdl: eqx.Module
-#     dyn: eqx.static_field
-#     max_iter: eqx.static_field
-#     tol: eqx.static_field
 
-#     def __init__(self, lin_mdl, nonlin_mdl, dyn, max_iter, tol) -> None:
-#         self.lin_mdl = lin_mdl
-#         self.nonlin_mdl = nonlin_mdl
-#         self.dyn = dyn
-#         self.max_iter = max_iter
-#         self.tol = tol
+def _deq(dyn, max_iter, tol, nonlin_mdl, lin_mdl, Z0, X):
+    bs = X.shape[0]
+    U0 = jnp.zeros_like(Z0)
 
-#     def __call__(self, x):
-#         bs = x.shape[0]
-#         z0 = jnp.zeros((bs, self.lin_mdl.out_size))
-#         dyn_init, dyn_update = self.dyn(self.lin_mdl, self.nonlin_mdl)
-#         dyn_state: PeacemanRachfordState = dyn_init(z0, z0.copy(), x)
-#         solver_state = solve(dyn_state, dyn_update, self.max_iter, self.tol)
-#         return solver_state.min_step.z
+    dyn_init, dyn_update = dyn(lin_mdl, nonlin_mdl)
+    dyn_state: PeacemanRachfordState = dyn_init(Z0, U0, X)
+    solver_state = jax.lax.stop_gradient(solve(dyn_state, dyn_update, max_iter, tol))
+    return solver_state
 
 @partial(custom_vjp, nondiff_argnums=(0, 1, 2, 3))
-def deq(dyn, max_iter, tol, nonlin_mdl, lin_mdl, x):
-    bs = x.shape[0]
-    z0 = jnp.zeros((bs, lin_mdl.out_size))
-    u0 = jnp.zeros_like(z0)
-
-    dyn_init, dyn_update = dyn(lin_mdl, nonlin_mdl)
-    dyn_state: PeacemanRachfordState = dyn_init(z0, u0, x)
-    solver_state = jax.lax.stop_gradient(solve(dyn_state, dyn_update, max_iter, tol))
+def deq(dyn, max_iter, tol, nonlin_mdl, lin_mdl, Z0, X):
+    solver_state = _deq(dyn, max_iter, tol, nonlin_mdl, lin_mdl, Z0, X)
     return solver_state.min_step.z
 
-def deq_forward(dyn, max_iter, tol, nonlin_mdl, lin_mdl, x):
-    bs = x.shape[0]
-    z0 = jnp.zeros((bs, lin_mdl.out_size))
-    u0 = jnp.zeros_like(z0)
+def deq_forward(dyn, max_iter, tol, nonlin_mdl, lin_mdl, Z0, X):
+    solver_state = _deq(dyn, max_iter, tol, nonlin_mdl, lin_mdl, Z0, X)
+    return solver_state.min_step.z, (solver_state.min_step, lin_mdl, X)
 
-    dyn_init, dyn_update = dyn(lin_mdl, nonlin_mdl)
-    dyn_state: PeacemanRachfordState = dyn_init(z0, u0, x)
-    solver_state = jax.lax.stop_gradient(solve(dyn_state, dyn_update, max_iter, tol))
-    return solver_state.min_step.z, (solver_state.min_step, lin_mdl, x)
-
-def deq_backward(dyn, max_iter, tol, nonlin_mdl, res, g):
+def _fp_bwd(dyn, max_iter, tol, nonlin_mdl, res, g):
     dyn_state: PeacemanRachfordState = res[0]
     lin_mdl = res[1]
     x = res[2]
@@ -117,16 +94,31 @@ def deq_backward(dyn, max_iter, tol, nonlin_mdl, res, g):
     dyn_init, dyn_update = dyn(lin_mdl, alter_nonlin_mdl_bwd)
     bwd_dyn_state: PeacemanRachfordState = dyn_init(z0, u0, x)
     bwd_dyn_state = bwd_dyn_state._replace(
-        Winv=bwd_dyn_state.Winv.T
+        Winv=bwd_dyn_state.Winv.T,
+        bias=jnp.zeros_like(bwd_dyn_state.bias)
     )
     solver_state = solve(bwd_dyn_state, dyn_update, max_iter, tol)
     
-    # dg = lin_mdl.W_trans(solver_state.min_step.z)
-    # dg = g + dg
+    dg = lin_mdl.W_trans(solver_state.min_step.z)
+    dg = g + dg
+    return dg
+
+def deq_backward(dyn, max_iter, tol, nonlin_mdl, res, g):
+    dyn_state: PeacemanRachfordState = res[0]
+    lin_mdl = res[1]
+    x = res[2]
+    z_star = dyn_state.z
+    dg = _fp_bwd(dyn, max_iter, tol, nonlin_mdl, res, g)
 
     # Problem: nonlin_mdl
     _, vjp_lin_fn = vjp(lambda lin_mdl, x: nonlin_mdl(lin_mdl(z_star, x)), lin_mdl, x)
 
-    return vjp_lin_fn(solver_state.min_step.z)
+    dlin, dx = vjp_lin_fn(dg)
+
+    return (dlin, None ,dx)
 
 deq.defvjp(deq_forward, deq_backward)
+
+def fcmon(dyn, max_iter, tol, u, nonlin_module, lin_module, Z0, X):
+    Z_star = deq(dyn, max_iter, tol, nonlin_module, lin_module, Z0, X)
+    return Z_star@u
