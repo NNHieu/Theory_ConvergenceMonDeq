@@ -1,3 +1,4 @@
+## Tangent kernel
 $$
 \begin{aligned}
 d\mathbf{z} |_{\mathbf{z}^*} 
@@ -65,6 +66,8 @@ $$
 \left[ X * Q \right] \left[ X * Q \right]^T = \left[ X X^T \right]\circ \left[ QQ^T \right]
 $$
 
+
+## Permutation 
 $$
 \begin{aligned}    
 P_A P_A^T     =& \left[(I + K^{(m)})(I \otimes A^T)\right] \left[(I + K^{(m)})(I \otimes A^T)\right]^\top \\    
@@ -75,4 +78,10 @@ P_A P_A^T     =& \left[(I + K^{(m)})(I \otimes A^T)\right] \left[(I + K^{(m)})(I
 &+ K^{(m)}(A^\top A \otimes I) + (A^\top A \otimes I) \\
 =& (I + K^{(m)})(A^TA \oplus A^TA)
 \end{aligned}
+$$
+
+or short
+
+$$
+P_A P_A^T = (I + K^{(m)})(A^TA \oplus A^TA)
 $$
